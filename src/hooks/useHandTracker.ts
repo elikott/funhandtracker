@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Hands } from '@mediapipe/hands'
+import type { Hands as HandsType } from '@mediapipe/hands'
+import '@mediapipe/hands'
 
 export type HandResult = {
   landmarks: { x: number; y: number; z?: number }[]
@@ -15,7 +16,7 @@ const defaultConnections = [
 
 export default function useHandTracker() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const handsRef = useRef<Hands | null>(null)
+  const handsRef = useRef<HandsType | null>(null)
   const cameraRef = useRef<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +51,11 @@ export default function useHandTracker() {
       }
 
       try {
-        handsRef.current = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` })
+        const HandsClass = typeof window !== 'undefined' ? (window as any).Hands : undefined
+        if (!HandsClass) {
+          throw new Error('MediaPipe Hands could not be loaded on window')
+        }
+        handsRef.current = new HandsClass({ locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` })
         handsRef.current.setOptions({
           maxNumHands: 2,
           modelComplexity: 1,
